@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ますぐらぼ</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://unpkg.com/blockly/msg/ja.js"></script>
+    <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=2556b2ff3fac426698f77c00457ad1f7"></script>
+  </head>
+  <body>
+    <div id="App">
+      <xml id="toolbox">
+        <category name="数値" colour="#5C81A6">
+          <block type="math_number"></block>
+          <block type="XYVariable"></block>
+        </category>
+        <category name="基本演算" colour="#88dd88">
+          <block type="Relation"></block>
+          <block type="math_operator"></block>
+          <block type="power"></block>
+          <block type="sqrt"></block>
+          <block type="trigonometry"></block>
+        </category>
+      </xml>
+      <div id="blocklyDiv"></div>
+      <div id="graphDiv"></div>
+    </div>
+
+    <div id="information">
+      <h1>ますぐらぼ</h1>
+      <p>
+        ますぐらぼは、ブロックを組み合わせて数式を作成し、その数式をグラフに描画することができるツールです。
+      </p>
+      <p>
+        ブロックをドラッグ＆ドロップして、数式を作成してください。作成した数式は、右側または上面のグラフに描画されます。
+      </p>
+      <p>フィードバックの収集にご協力ください。</p>
+      <p>
+        フィードバックは<a
+          href="https://forms.gle/KbJL1in1Go7gwdaV9"
+          target="_blank"
+          >こちら</a
+        >
+      </p>
+    </div>
+
+    <script src="originalBlocksStyle.js"></script>
+    <script src="originalBlocksCode.js"></script>
+    <script src="app.js"></script>
+    <script src="graph.js"></script>
+  </body>
+</html>

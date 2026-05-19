@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ますぐらぼ</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://unpkg.com/blockly/msg/ja.js"></script>
+    <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=2556b2ff3fac426698f77c00457ad1f7"></script>
+  </head>
+  <body>
+    <div id="App">
+      <xml id="toolbox">
+        <block type="math_number"></block>
+        <block type="XYVariable"></block>
+        <block type="math_operator"></block>
+        <block type="power"></block>
+        <block type="sqrt"></block>
+        <block type="trigonometry"></block>
+        <block type="Relation"></block>
+      </xml>
+      <div id="blocklyDiv"></div>
+      <div id="graphDiv"></div>
+    </div>
+
+    <script src="originalBlocksStyle.js"></script>
+    <script src="originalBlocksCode.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
