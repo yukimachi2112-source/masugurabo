@@ -48,6 +48,7 @@ const elt = document.getElementById("graphDiv");
 const calculator = Desmos.GraphingCalculator(elt, {
   expressions: false, //数式入力用の左側サイドバーを非表示にする
   keypad: false, // 画面下部の専用ソフトキーパッドを非表示にする
+  restriction: true, // グラフの移動を制限する（画面外に行かないようにする）
 });
 
 // 【追加】Desmos(calculator)の初期化が完了した後に、グラフ更新リスナーを結合する
@@ -85,7 +86,7 @@ window.addEventListener("resize", () => {
 
       // 退避させておいたバックアップ用のXMLから、ブロック群を新しいワークスペース上に寸分の狂いなく復元
       Blockly.Xml.domToWorkspace(xml, workspace);
-      
+
       // 【追加】復元したブロックの描画状態を明示的に強制更新する
       workspace.render();
     }
@@ -93,10 +94,10 @@ window.addEventListener("resize", () => {
 });
 
 // ---メニューの開閉ボタンの設定---
-　// 1. 全てのトグルボタンを取得
+// // 1. 全てのトグルボタンを取得
 const buttons = document.querySelectorAll(".toggle-btn");
 
-// 2. トグル処理の本体（アロー関数）
+// 2. トグル処理の本体
 const handleToggle = (event) => {
   // ブラウザのデフォルト動作（aタグなどの場合）を抑制
   event.preventDefault();
