@@ -39,7 +39,27 @@
       <div id="graphDiv"></div>
     </div>
 
+    <div id="buttons">
+      <button
+        id="informationButton"
+        class="toggle-btn"
+        data-target="information"
+      >
+        概要
+      </button>
+      <button id="tutorialButton" class="toggle-btn" data-target="tutorial">
+        使い方説明
+      </button>
+    </div>
+
     <div id="information" class="hidden float">
+      <button
+        id="closeInformationButton"
+        class="toggle-btn close-btn"
+        data-target="information"
+      >
+        概要を閉じる
+      </button>
       <h1>ますぐらぼ</h1>
       <p>
         ますぐらぼは、ブロックを組み合わせて数式を作成し、その数式をグラフに描画することができるツールです。
@@ -57,23 +77,20 @@
       </p>
     </div>
 
-    <div id="buttons">
-      <button
-        id="informationButton"
-        class="toggle-btn"
-        data-target="information"
-      >
-        概要
-      </button>
-      <button id="tutorialButton" class="toggle-btn" data-target="tutorial">
-        使い方説明
-      </button>
-    </div>
-
     <div id="tutorial" class="hidden float">
+      <button
+        id="closeTutorialButton"
+        class="toggle-btn close-btn"
+        data-target="tutorial"
+      >
+        使い方説明を閉じる
+      </button>
       <h2>使い方説明</h2>
-      <p>現在動画準備中</p>
-      <p>こちらの動画をご覧ください</p>
+      <p>数値＆変数タブをクリックし、X, Yをドラッグ＆ドロップしましょう。</p>
+      <p>
+        基本関数タブをクリックし、=をドラッグ＆ドロップして数式を作成してみましょう。
+      </p>
+      <p>動画は現在準備中です</p>
     </div>
 
     <script src="originalBlocksStyle.js"></script>
