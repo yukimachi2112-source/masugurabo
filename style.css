@@ -1,7 +1,8 @@
 /* ===================================================
    1. 基本レイアウト（主にPC・タブレット横画面向けのスタイル）
    =================================================== */
-html, body {
+html,
+body {
   background-color: #f0f0f0;
   font-family: Arial, sans-serif;
   font-size: 18px;
@@ -28,17 +29,17 @@ html, body {
   border: 1px solid #ccc;
   background-color: #fff;
   position: absolute; /* 親要素の左上に合わせて配置 */
-  z-index: 1;         /* グラフ画面より下に配置 */
+  z-index: 1; /* グラフ画面より下に配置 */
 }
 
 /* Desmos（グラフ画面）のコンテナ */
 #graphDiv {
-  width: 45vmin;  /* 画面の短い方の辺（幅か高さ）を基準にサイズを決定 */
+  width: 45vmin; /* 画面の短い方の辺（幅か高さ）を基準にサイズを決定 */
   height: 45vmin;
   border: 1px solid #ccc;
   background-color: #fff;
   position: absolute; /* 右上にフローティング（浮いた状態）で配置 */
-  z-index: 10;        /* Blockly操作画面より前面に重ねて表示 */
+  z-index: 10; /* Blockly操作画面より前面に重ねて表示 */
   top: 0px;
   right: 0px;
   margin: 0;
@@ -67,11 +68,11 @@ html, body {
    =================================================== */
 /* ボタンの配置：ツールボックス（左側）を避け、右側のグラフの左隣に浮かせる */
 #buttons {
-  position: absolute; 
+  position: absolute;
   z-index: 30; /* Blockly(1)やグラフ(10)より手前に配置 */
-  top: 10px;   /* 上端から余白をあける */
+  top: 10px; /* 上端から余白をあける */
   right: calc(45vmin + 10px); /* グラフの横幅 + 余白の分だけ左に寄せる */
-  left: auto;  /* 縦画面用スタイルの打ち消し */
+  left: auto; /* 縦画面用スタイルの打ち消し */
   bottom: auto; /* 縦画面用スタイルの打ち消し */
 }
 
@@ -87,11 +88,11 @@ html, body {
 /* メニュー本体：画面全体に浮かせるポップアップ（ダイアログ）風のスタイル */
 .float {
   position: fixed; /* 画面（ビューポート）に対して固定 */
-  z-index: 20;     /* 要素（Blocklyやグラフ）の前面に配置、ボタンの裏側に配置 */
-  top: 50%;        /* 画面中央に配置 */
+  z-index: 20; /* 要素（Blocklyやグラフ）の前面に配置、ボタンの裏側に配置 */
+  top: 50%; /* 画面中央に配置 */
   left: 50%;
   transform: translate(-50%, -50%); /* 中央ぴったりに合わせる */
-  width: 85%;       /* 画面に合わせた可変幅 */
+  width: 85%; /* 画面に合わせた可変幅 */
   max-width: 500px; /* 広がりすぎない制限 */
   max-height: 80vh; /* 縦長画面でもはみ出さないように制限 */
   overflow-y: auto; /* 文章が長くなったらメニュー内スクロール */
@@ -100,6 +101,16 @@ html, body {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* 影をつけて浮いている感を出す */
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  background-color: #ccc;
 }
 
 .hidden {
@@ -132,9 +143,9 @@ html, body {
 
   /* スマホ・縦画面ではメニューボタンを「左下」に配置 */
   #buttons {
-    top: auto;    /* 上端固定を解除 */
-    right: auto;  /* 右端固定を解除 */
+    top: auto; /* 上端固定を解除 */
+    right: auto; /* 右端固定を解除 */
     bottom: 10px; /* 下端から余白をあける */
-    left: 10px;   /* 左端から余白をあける */
+    left: 10px; /* 左端から余白をあける */
   }
 }
