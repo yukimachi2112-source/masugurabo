@@ -211,13 +211,13 @@ window.latexGenerator.forBlock["math_round_functions"] = function (block) {
   let code = "";
   switch (op) {
     case "FLOOR":
-      code = `\\left\\lfloor${a}\\right\\rfloor`; // 床関数（切り捨て。下部だけにカギがあるブラケット \lfloor と \rfloor を適用）
+      code = `\\floor\\(${a}\\)`; // 床関数（切り捨て。下部だけにカギがあるブラケット \lfloor と \rfloor を適用）
       break;
     case "CEIL":
-      code = `\\left\\lceil${a}\\right\\rceil`; // 天井関数（切り上げ。上部だけにカギがあるブラケット \lceil と \rceil を適用）
+      code = `\\ceil\\(${a}\\)l`; // 天井関数（切り上げ。上部だけにカギがあるブラケット \lceil と \rceil を適用）
       break;
     case "ROUND":
-      code = `\\left\\lfloor${a} + \\frac{1}{2}\\right\\rfloor`; // 四捨五入（対象に0.5を足した上で床関数を適用する数学的アプローチで実装）
+      code = `\\round\\(${a}\\)`; // 四捨五入（対象に0.5を足した上で床関数を適用する数学的アプローチで実装）
       break;
   }
   return [code, window.latexGenerator.ORDER_ATOMIC];
