@@ -1,7 +1,6 @@
 // ==========================================
 // 1. グラフ描画・同期更新処理（Blockly から Desmos API への橋渡し）
 // ==========================================
-// 引数として渡されたBlocklyワークスペースの変更を監視し、リアルタイムにDesmosへと数式を送り込む関数
 window.initGraphUpdater = function (targetWorkspace) {
   if (!targetWorkspace) return;
 
@@ -13,7 +12,6 @@ window.initGraphUpdater = function (targetWorkspace) {
     if (event.type === Blockly.Events.BLOCK_MOVE && event.isDragging) return;
 
     const topBlocks = targetWorkspace.getTopBlocks();
-
     const currentTopBlockIds = new Set();
 
     topBlocks.forEach((block) => {
@@ -35,8 +33,6 @@ window.initGraphUpdater = function (targetWorkspace) {
       if (formula) {
         formula = formula.trim();
 
-        const SAFE_FUNCS = /\\(sin|cos|tan|log|ln|sqrt|frac)\s*\(/;
-
         let prev;
         let loop = 0;
         const MAX = 50;
@@ -44,19 +40,22 @@ window.initGraphUpdater = function (targetWorkspace) {
         do {
           prev = formula;
 
-          // --- (1) 関数でない単純カッコを削除 ---
+          // --- (1) \left( ... \right) は絶対に保護 ---
+          // 一旦一時退避
+          const stored = [];
           formula = formula.replace(
-            /\(([^()]+)\)/g,
-            (m, inner) => {
-              // 関数の引数は残す
-              if (SAFE_FUNCS.test(m)) return m;
-
-              // 中身が式ならカッコ不要 → 削除
-              return inner;
+            /\\left\((.*?)\\right\)/g,
+            (_, inner) => {
+              const key = `__LEFT_RIGHT_${stored.length}__`;
+              stored.push(inner);
+              return key;
             }
           );
 
-          // --- (2) 全体囲みカッコを除去 ---
+          // --- (2) 通常の不要カッコを削除 ---
+          formula = formula.replace(/\(([^()]+)\)/g, "$1");
+
+          // --- (3) 全体囲みカッコ削除（安全） ---
           if (
             formula.startsWith("(") &&
             formula.endsWith(")") &&
@@ -65,20 +64,31 @@ window.initGraphUpdater = function (targetWorkspace) {
             formula = formula.slice(1, -1).trim();
           }
 
+          // --- (4) 退避した \left ... \right を復元 ---
+          stored.forEach((inner, i) => {
+            formula = formula.replace(
+              `__LEFT_RIGHT_${i}__`,
+              `\\left(${inner}\\right)`
+            );
+          });
+
           loop++;
         } while (formula !== prev && loop < MAX);
 
         // --- 定義域まわりの丸カッコ徹底掃除ロジック ---
 
-        // ① `{ ... }` の内部の丸カッコ完全削除
-        formula = formula.replace(/\{[^}]*\}/g, (m) =>
-          m.replace(/[()]/g, "")
-        );
+        // ① `{}` 内の () 削除（ただし left/right は守る）
+        formula = formula.replace(/\{[^}]*\}/g, (m) => {
+          return m.replace(
+            /\(([^()]*)\)/g,
+            (_, inner) => inner
+          );
+        });
 
-        // ② `{` の直前カッコ除去
+        // ② `{` の直前カッコ削除
         formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
 
-        // ③ 全体が `( ... { ... })` の場合の前カッコ除去
+        // ③ 先頭の余計な "(" 削除
         if (formula.startsWith("(") && formula.includes("{")) {
           formula = formula.replace(/^\(/, "");
         }
@@ -120,7 +130,7 @@ window.initGraphUpdater = function (targetWorkspace) {
   });
 
   // ==========================================
-  // 補助関数：カッコの整合性チェック
+  // 補助関数：カッコ整合性チェック
   // ==========================================
   function isBalanced(str) {
     let depth = 0;
