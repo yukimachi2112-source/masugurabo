@@ -1,165 +1,221 @@
 // ==========================================
-// 0. LaTeX完全安全クレンジング
+// 0. LaTeXジェネレーター定義
+// ==========================================
+window.latexGenerator = new Blockly.Generator("LaTeX");
+
+window.latexGenerator.ORDER_NONE = 0;
+window.latexGenerator.ORDER_ATOMIC = 99;
+
+window.latexGenerator.init = function () {};
+window.latexGenerator.finish = function (code) {
+  return code;
+};
+
+window.latexGenerator.scrub_ = function (block, code, opt_thisOnly) {
+  const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
+  const nextCode = opt_thisOnly
+    ? ""
+    : window.latexGenerator.blockToCode(nextBlock);
+
+  return code + nextCode;
+};
+
+// ==========================================
+// 1. ブロック定義（カッコ最小化設計）
+// ==========================================
+
+window.latexGenerator.forBlock["math_number"] = (b) => [
+  String(b.getFieldValue("NUM")),
+  99,
+];
+
+window.latexGenerator.forBlock["XYVariable"] = (b) => [
+  b.getFieldValue("OP"),
+  99,
+];
+
+window.latexGenerator.forBlock["math_operator"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const c = window.latexGenerator.valueToCode(b, "B", 0) || "0";
+  const op = b.getFieldValue("OP");
+
+  switch (op) {
+    case "ADD":
+      return [`${a} + ${c}`, 0];
+    case "MINUS":
+      return [`${a} - ${c}`, 0];
+    case "MULT":
+      return [`${a} \\cdot ${c}`, 0];
+    case "DIV":
+      return [`\\frac{${a}}{${c}}`, 99];
+  }
+};
+
+window.latexGenerator.forBlock["power"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const c = window.latexGenerator.valueToCode(b, "B", 0) || "0";
+  return [`${a}^{${c}}`, 99];
+};
+
+window.latexGenerator.forBlock["sqrt"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const op = b.getFieldValue("OP");
+
+  if (op === "SQRT") return [`\\sqrt{${a}}`, 99];
+  if (op === "ABS") return [`\\left|${a}\\right|`, 99];
+  if (op === "RECIPROCAL") return [`\\frac{1}{${a}}`, 99];
+};
+
+window.latexGenerator.forBlock["trigonometry"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const f = b.getFieldValue("OP").toLowerCase();
+  return [`\\${f}\\left(${a}\\right)`, 99];
+};
+
+window.latexGenerator.forBlock["math_round_functions"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const map = { FLOOR: "floor", CEIL: "ceil", ROUND: "round" };
+  return [`\\operatorname{${map[b.getFieldValue("OP")]}}\\left(${a}\\right)`, 99];
+};
+
+window.latexGenerator.forBlock["logarithm"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  return b.getFieldValue("OP") === "LOG10"
+    ? [`\\log_{10}\\left(${a}\\right)`, 99]
+    : [`\\ln\\left(${a}\\right)`, 99];
+};
+
+window.latexGenerator.forBlock["constant"] = (b) => [
+  b.getFieldValue("OP") === "PI" ? "\\pi" : "e",
+  99,
+];
+
+window.latexGenerator.forBlock["Relation"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const c = window.latexGenerator.valueToCode(b, "B", 0) || "0";
+  const map = {
+    EQ: "=",
+    LT: "\\lt",
+    LTE: "\\le",
+    GT: "\\gt",
+    GTE: "\\ge",
+  };
+  return `${a} ${map[b.getFieldValue("OP")]} ${c}`;
+};
+
+window.latexGenerator.forBlock["Relation_Range"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const c = window.latexGenerator.valueToCode(b, "B", 0) || "0";
+  const r = window.latexGenerator.valueToCode(b, "RANGE", 0) || "";
+
+  const map = {
+    EQ: "=",
+    LT: "\\lt",
+    LTE: "\\le",
+    GT: "\\gt",
+    GTE: "\\ge",
+  };
+
+  return r
+    ? `${a} ${map[b.getFieldValue("OP")]} ${c} \\{ ${r} \\}`
+    : `${a} ${map[b.getFieldValue("OP")]} ${c}`;
+};
+
+window.latexGenerator.forBlock["range"] = (b) => {
+  const a = window.latexGenerator.valueToCode(b, "A", 0) || "0";
+  const c = window.latexGenerator.valueToCode(b, "B", 0) || "0";
+
+  const map = {
+    LT: "\\lt",
+    LTE: "\\le",
+    GT: "\\gt",
+    GTE: "\\ge",
+  };
+
+  return [`${a} ${map[b.getFieldValue("OP")]} ${c}`, 99];
+};
+
+// ==========================================
+// 2. LaTeXクレンジング（壊さない版）
 // ==========================================
 function cleanLatex(formula) {
   if (!formula) return "";
 
-  formula = formula.trim();
-
   let prev;
   let loop = 0;
-  const MAX = 50;
 
   do {
     prev = formula;
 
-    // ======================================
-    // (A) 構造保護（絶対壊さない）
-    // ======================================
-    const protectedBlocks = [];
-
+    // 保護
+    const store = [];
     formula = formula.replace(
       /(\\left\([^]*?\\right\))|(\\frac\{[^}]*\}\{[^}]*\})|(\\operatorname\{[^}]*\})|(\\sqrt\{[^}]*\})/g,
       (m) => {
-        const key = `__P${protectedBlocks.length}__`;
-        protectedBlocks.push(m);
-        return key;
+        const k = "__P" + store.length + "__";
+        store.push(m);
+        return k;
       }
     );
 
-    // ======================================
-    // (B) 不要カッコ削除（安全）
-    // ======================================
+    // 軽い削除だけ
+    formula = formula
+      .replace(/\((x)\)/g, "x")
+      .replace(/\((\d+(\.\d+)?)\)/g, "$1");
 
-    // (x)
-    formula = formula.replace(/\((x)\)/g, "$1");
-
-    // (数値)
-    formula = formula.replace(/\((\d+(\.\d+)?)\)/g, "$1");
-
-    // ((式)) → 式
-    formula = formula.replace(/\(([^()]+)\)/g, "$1");
-
-    // ======================================
-    // (C) 外側全体カッコ削除
-    // ======================================
-    if (
-      formula.startsWith("(") &&
-      formula.endsWith(")") &&
-      isBalanced(formula.slice(1, -1))
-    ) {
-      formula = formula.slice(1, -1).trim();
-    }
-
-    // ======================================
-    // (D) 定義域対策
-    // ======================================
-    formula = formula.replace(/\{[^}]*\}/g, (m) =>
-      m.replace(/[()]/g, "")
-    );
-
-    formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
-
-    // ======================================
-    // (E) left/right修復
-    // ======================================
-
-    const leftCount = (formula.match(/\\left\(/g) || []).length;
-    const rightCount = (formula.match(/\\right\)/g) || []).length;
-
-    if (leftCount > rightCount) {
-      formula += "\\right)";
-    }
-
-    // ======================================
-    // (F) 復元
-    // ======================================
-    protectedBlocks.forEach((b, i) => {
-      formula = formula.replace(`__P${i}__`, b);
+    // 保存復元
+    store.forEach((v, i) => {
+      formula = formula.replace("__P" + i + "__", v);
     });
 
     loop++;
-  } while (formula !== prev && loop < MAX);
+  } while (formula !== prev && loop < 20);
+
+  // left/right補完
+  const l = (formula.match(/\\left\(/g) || []).length;
+  const r = (formula.match(/\\right\)/g) || []).length;
+  if (l > r) formula += "\\right)";
 
   return formula;
 }
 
 // ==========================================
-// カッコ整合性チェック
+// 3. GraphUpdater
 // ==========================================
-function isBalanced(str) {
-  let depth = 0;
-  for (let c of str) {
-    if (c === "(") depth++;
-    if (c === ")") depth--;
-    if (depth < 0) return false;
-  }
-  return depth === 0;
-}
+window.initGraphUpdater = function (workspace) {
+  if (!workspace) return;
 
-// ==========================================
-// 1. グラフ描画・同期更新処理（完全安定版）
-// ==========================================
-window.initGraphUpdater = function (targetWorkspace) {
-  if (!targetWorkspace) return;
-
-  targetWorkspace.addChangeListener((event) => {
-    // 【UIイベントの排除】
+  workspace.addChangeListener((event) => {
     if (event.isUiEvent) return;
-
-    // 【パフォーマンス対策】
     if (event.type === Blockly.Events.BLOCK_MOVE && event.isDragging) return;
 
-    const topBlocks = targetWorkspace.getTopBlocks();
-    const currentTopBlockIds = new Set();
+    const topBlocks = workspace.getTopBlocks();
+    const alive = new Set();
 
     topBlocks.forEach((block) => {
-      const desmosId = `blockly_graph_${block.id}`;
-      currentTopBlockIds.add(desmosId);
+      const id = "blockly_graph_" + block.id;
+      alive.add(id);
 
-      let formula = "";
-      try {
-        const res = window.latexGenerator.blockToCode(block);
-        formula = Array.isArray(res) ? res[0] : res;
-      } catch (e) {
-        console.error("LaTeX生成エラー:", e);
-        return;
-      }
+      let f = window.latexGenerator.blockToCode(block);
+      if (Array.isArray(f)) f = f[0];
 
-      // ここで完全クレンジング（重要）
-      formula = cleanLatex(formula);
+      f = cleanLatex(f);
 
-      // ==========================================
-      // Desmos送信
-      // ==========================================
-      if (formula && formula.trim() !== "") {
-        const isRelation =
-          /=|\\lt|\\gt|\\le|\\ge|\{/.test(formula) ||
-          block.type === "Relation" ||
-          block.type === "Relation_Range";
+      const isRelation =
+        /=|\\lt|\\gt|\\le|\\ge|\{/.test(f) ||
+        block.type === "Relation" ||
+        block.type === "Relation_Range";
 
-        if (!isRelation) {
-          formula = `y = ${formula}`;
-        }
+      if (!isRelation) f = "y = " + f;
 
-        console.log("Desmos最終:", formula);
+      console.log("FINAL:", f);
 
-        calculator.setExpression({
-          id: desmosId,
-          latex: formula,
-        });
-      }
+      calculator.setExpression({ id, latex: f });
     });
 
-    // ==========================================
-    // 削除処理
-    // ==========================================
-    calculator.getExpressions().forEach((expr) => {
-      if (
-        expr.id.startsWith("blockly_graph_") &&
-        !currentTopBlockIds.has(expr.id)
-      ) {
-        calculator.removeExpression(expr);
+    calculator.getExpressions().forEach((e) => {
+      if (e.id.startsWith("blockly_graph_") && !alive.has(e.id)) {
+        calculator.removeExpression(e);
       }
     });
   });
