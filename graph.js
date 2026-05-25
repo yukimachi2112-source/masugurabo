@@ -1,5 +1,7 @@
+import { cleanLatex } from "./latexCleaner.js";
+
 // ==========================================
-// 1. グラフ描画・同期更新処理（Blockly から Desmos API への橋渡し）
+// 1. グラフ描画・同期更新処理（完全安定版）
 // ==========================================
 window.initGraphUpdater = function (targetWorkspace) {
   if (!targetWorkspace) return;
@@ -27,82 +29,11 @@ window.initGraphUpdater = function (targetWorkspace) {
         return;
       }
 
-      // ==========================================
-      // 2. カッコの自動クレンジング・整形処理（完全安全版）
-      // ==========================================
-      if (formula) {
-        formula = formula.trim();
-
-        let prev;
-        let loop = 0;
-        const MAX = 50;
-
-        do {
-          prev = formula;
-
-          // ======================================
-          // (A) 重要構造を完全保護
-          // ======================================
-          const protectedBlocks = [];
-
-          formula = formula.replace(
-            /(\\left\([^]*?\\right\))|(\\frac\{[^}]*\}\{[^}]*\})|(\\operatorname\{[^}]*\})|(\\sqrt\{[^}]*\})/g,
-            (match) => {
-              const key = `__PROTECTED_${protectedBlocks.length}__`;
-              protectedBlocks.push(match);
-              return key;
-            }
-          );
-
-          // ======================================
-          // (B) 安全な括弧削除
-          // ======================================
-
-          // (x) → x
-          formula = formula.replace(/\((x)\)/g, "$1");
-
-          // (10) → 10
-          formula = formula.replace(/\((\d+(\.\d+)?)\)/g, "$1");
-
-          // (a+b) → a+b （単純式のみ）
-          formula = formula.replace(/\(([^()]+)\)/g, "$1");
-
-          // ======================================
-          // (C) 外側丸ごとカッコ除去
-          // ======================================
-          if (
-            formula.startsWith("(") &&
-            formula.endsWith(")") &&
-            isBalanced(formula.slice(1, -1))
-          ) {
-            formula = formula.slice(1, -1).trim();
-          }
-
-          // ======================================
-          // (D) 定義域対策（Desmos厳格仕様）
-          // ======================================
-
-          // { } 内の () 削除
-          formula = formula.replace(/\{[^}]*\}/g, (m) =>
-            m.replace(/[()]/g, "")
-          );
-
-          // (式){条件} → 式{条件}
-          formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
-
-          // ======================================
-          // (E) 保護ブロック復元
-          // ======================================
-          protectedBlocks.forEach((block, i) => {
-            formula = formula.replace(`__PROTECTED_${i}__`, block);
-          });
-
-          loop++;
-        } while (formula !== prev && loop < MAX);
-      }
+      // ここで完全クレンジング（重要）
+      formula = cleanLatex(formula);
 
       // ==========================================
-      // 3. Desmos への送信・上書き登録
+      // Desmos送信
       // ==========================================
       if (formula && formula.trim() !== "") {
         const isRelation =
@@ -114,7 +45,7 @@ window.initGraphUpdater = function (targetWorkspace) {
           formula = `y = ${formula}`;
         }
 
-        console.log("Desmosに送信される最終LaTeX:", formula);
+        console.log("Desmos最終:", formula);
 
         calculator.setExpression({
           id: desmosId,
@@ -124,7 +55,7 @@ window.initGraphUpdater = function (targetWorkspace) {
     });
 
     // ==========================================
-    // 4. ゴミ箱（削除）対応の差分クリーンアップ処理
+    // 削除処理
     // ==========================================
     calculator.getExpressions().forEach((expr) => {
       if (
@@ -135,17 +66,4 @@ window.initGraphUpdater = function (targetWorkspace) {
       }
     });
   });
-
-  // ==========================================
-  // 補助関数：カッコ整合性チェック
-  // ==========================================
-  function isBalanced(str) {
-    let depth = 0;
-    for (let c of str) {
-      if (c === "(") depth++;
-      if (c === ")") depth--;
-      if (depth < 0) return false;
-    }
-    return depth === 0;
-  }
 };
