@@ -28,7 +28,7 @@ window.initGraphUpdater = function (targetWorkspace) {
       }
 
       // ==========================================
-      // 2. カッコの自動クレンジング・整形処理
+      // 2. カッコの自動クレンジング・整形処理（完全安全版）
       // ==========================================
       if (formula) {
         formula = formula.trim();
@@ -40,22 +40,36 @@ window.initGraphUpdater = function (targetWorkspace) {
         do {
           prev = formula;
 
-          // --- (1) \left( ... \right) は絶対に保護 ---
-          // 一旦一時退避
-          const stored = [];
+          // ======================================
+          // (A) 重要構造を完全保護
+          // ======================================
+          const protectedBlocks = [];
+
           formula = formula.replace(
-            /\\left\((.*?)\\right\)/g,
-            (_, inner) => {
-              const key = `__LEFT_RIGHT_${stored.length}__`;
-              stored.push(inner);
+            /(\\left\([^]*?\\right\))|(\\frac\{[^}]*\}\{[^}]*\})|(\\operatorname\{[^}]*\})|(\\sqrt\{[^}]*\})/g,
+            (match) => {
+              const key = `__PROTECTED_${protectedBlocks.length}__`;
+              protectedBlocks.push(match);
               return key;
             }
           );
 
-          // --- (2) 通常の不要カッコを削除 ---
+          // ======================================
+          // (B) 安全な括弧削除
+          // ======================================
+
+          // (x) → x
+          formula = formula.replace(/\((x)\)/g, "$1");
+
+          // (10) → 10
+          formula = formula.replace(/\((\d+(\.\d+)?)\)/g, "$1");
+
+          // (a+b) → a+b （単純式のみ）
           formula = formula.replace(/\(([^()]+)\)/g, "$1");
 
-          // --- (3) 全体囲みカッコ削除（安全） ---
+          // ======================================
+          // (C) 外側丸ごとカッコ除去
+          // ======================================
           if (
             formula.startsWith("(") &&
             formula.endsWith(")") &&
@@ -64,34 +78,27 @@ window.initGraphUpdater = function (targetWorkspace) {
             formula = formula.slice(1, -1).trim();
           }
 
-          // --- (4) 退避した \left ... \right を復元 ---
-          stored.forEach((inner, i) => {
-            formula = formula.replace(
-              `__LEFT_RIGHT_${i}__`,
-              `\\left(${inner}\\right)`
-            );
+          // ======================================
+          // (D) 定義域対策（Desmos厳格仕様）
+          // ======================================
+
+          // { } 内の () 削除
+          formula = formula.replace(/\{[^}]*\}/g, (m) =>
+            m.replace(/[()]/g, "")
+          );
+
+          // (式){条件} → 式{条件}
+          formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
+
+          // ======================================
+          // (E) 保護ブロック復元
+          // ======================================
+          protectedBlocks.forEach((block, i) => {
+            formula = formula.replace(`__PROTECTED_${i}__`, block);
           });
 
           loop++;
         } while (formula !== prev && loop < MAX);
-
-        // --- 定義域まわりの丸カッコ徹底掃除ロジック ---
-
-        // ① `{}` 内の () 削除（ただし left/right は守る）
-        formula = formula.replace(/\{[^}]*\}/g, (m) => {
-          return m.replace(
-            /\(([^()]*)\)/g,
-            (_, inner) => inner
-          );
-        });
-
-        // ② `{` の直前カッコ削除
-        formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
-
-        // ③ 先頭の余計な "(" 削除
-        if (formula.startsWith("(") && formula.includes("{")) {
-          formula = formula.replace(/^\(/, "");
-        }
       }
 
       // ==========================================
