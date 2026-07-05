@@ -3,12 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="google-site-verification" content="5uoNWJCmJ6pnaXWQpILSTqlLkbaz6pvDYtt-yyvYgso" />
     <title>ますぐらぼ</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://unpkg.com/blockly/blockly.min.js"></script>
     <script src="https://unpkg.com/blockly/msg/ja.js"></script>
     <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=2556b2ff3fac426698f77c00457ad1f7"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+        },
+      };
+    </script>
+    <script
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
   </head>
   <body>
     <div id="App">
@@ -37,7 +47,13 @@
         </category>
       </xml>
       <div id="blocklyDiv"></div>
-      <div id="graphDiv"></div>
+      <div id="rightPanel">
+        <div id="graphDiv"></div>
+        <div id="previewDiv">
+          <h2>作った数式</h2>
+          <div id="LateXOutput"></div>
+        </div>
+      </div>
     </div>
 
     <div id="buttons">
@@ -50,6 +66,12 @@
       </button>
       <button id="tutorialButton" class="toggle-btn" data-target="tutorial">
         使い方説明
+      </button>
+      <button id="exportBtn" class="toggle-btn" data-target="export">
+        プロジェクトを保存
+      </button>
+      <button id="importBtn" class="toggle-btn" data-target="import">
+        プロジェクトを読み込み
       </button>
     </div>
 
@@ -92,6 +114,50 @@
         基本関数タブをクリックし、=をドラッグ＆ドロップして数式を作成してみましょう。
       </p>
       <p>動画は現在準備中です</p>
+    </div>
+
+    <div id="export" class="hidden float">
+      <button
+        id="closeExportButton"
+        class="toggle-btn close-btn"
+        data-target="export"
+      >
+        保存画面を閉じる
+      </button>
+      <h2>プロジェクトを保存</h2>
+      <p>下のボタンをクリックしてプロジェクトをダウンロードしてください</p>
+      <button id="downloadBtn">プロジェクトをダウンロード</button>
+    </div>
+
+    <div id="import" class="hidden float">
+      <button
+        id="closeImportButton"
+        class="toggle-btn close-btn"
+        data-target="import"
+      >
+        読み込み画面を閉じる
+      </button>
+      <h2>プロジェクトを読み込み</h2>
+      <div style="margin-top: 10px">
+        <label
+          for="importJsonInput"
+          style="
+            padding: 8px 16px;
+            background: #e0e0e0;
+            cursor: pointer;
+            border-radius: 4px;
+            display: inline-block;
+          "
+        >
+          JSONファイルを読み込む
+        </label>
+        <input
+          type="file"
+          id="importJsonInput"
+          accept=".json"
+          style="display: none"
+        />
+      </div>
     </div>
 
     <script src="originalBlocksStyle.js"></script>
