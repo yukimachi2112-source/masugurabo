@@ -82,7 +82,7 @@ body {
   display: none;
   max-width: 65vw;
   padding: 10px;
-  z-index: 10;
+  z-index: 10 !important;
 }
 
 /* Blocklyのブロック内テキスト（数式など）のフォント・見栄え設定 */
