@@ -1,5 +1,5 @@
 // ==========================================
-// 1. グラフ描画・同期更新処理（Blockly から Desmos API への橋渡し）
+// 1. グラフ描画・同期更新処理（Blockly から Desmos API への橋渡し
 // ==========================================
 window.initGraphUpdater = (targetWorkspace) => {
   if (!targetWorkspace) return;
