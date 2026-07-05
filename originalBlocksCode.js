@@ -4,7 +4,7 @@
 // Blocklyのコアシステムに「LaTeX」という名前の新しいコード生成器（ジェネレーター）を登録
 window.latexGenerator = new Blockly.Generator("LaTeX");
 
-// 演算子の結合度（優先順位を定義する定数
+// 演算子の結合度（優先順位）を定義する定数
 window.latexGenerator.ORDER_NONE = 0; // 優先順位なし（結合力が最も弱く、括弧などの処理を考慮しない最低の結合度）
 window.latexGenerator.ORDER_ATOMIC = 99; // 最小単位（これ以上分解・展開できない最高の結合度。変数や数値など単体）
 
