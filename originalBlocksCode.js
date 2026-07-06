@@ -1,12 +1,17 @@
 // ==========================================
-// 1. ジェネレーターの新規定義と初期設定 
+// 1. ジェネレーターの新規定義と初期設定
 // ==========================================
 // Blocklyのコアシステムに「LaTeX」という名前の新しいコード生成器（ジェネレーター）を登録
 window.latexGenerator = new Blockly.Generator("LaTeX");
 
-// 演算子の結合度（優先順位）を定義する定数
-window.latexGenerator.ORDER_NONE = 0; // 優先順位なし（結合力が最も弱く、括弧などの処理を考慮しない最低の結合度）
-window.latexGenerator.ORDER_ATOMIC = 99; // 最小単位（これ以上分解・展開できない最高の結合度。変数や数値など単体）
+// 演算子の結合度（優先順位）を定義する
+window.latexGenerator.ORDER_ATOMIC = 0;
+window.latexGenerator.ORDER_FUNCTION = 0;
+window.latexGenerator.ORDER_POWER = 0;
+window.latexGenerator.ORDER_MULTIPLY = 0;
+window.latexGenerator.ORDER_ADD = 0;
+window.latexGenerator.ORDER_RELATION = 0;
+window.latexGenerator.ORDER_NONE = 0;
 
 // ワークスペース全体のコード生成を開始する前の前処理（今回は事前準備が不要なため空関数）
 window.latexGenerator.init = function (workspace) {};
@@ -65,13 +70,13 @@ window.latexGenerator.forBlock["math_operator"] = function (block) {
   // 演算子の種類に応じ、LaTeXの数式表記ルールに則って文字列を組み立て
   switch (op) {
     case "ADD":
-      code = `${a} + ${b}`; // 加算（標準的なプラス記号）
+      code = `(${a}) + (${b})`; // 加算（標準的なプラス記号）
       break;
     case "MINUS":
-      code = `${a} - ${b}`; // 減算（標準的なマイナス記号）
+      code = `(${a}) - (${b})`; // 減算（標準的なマイナス記号）
       break;
     case "MULT":
-      code = `${a} \\cdot ${b}`; // 乗算（Desmos等で中黒を表現する \cdot コマンド。JSの文字列内でエスケープするためバックスラッシュは2本）
+      code = `(${a}) \\cdot (${b})`; // 乗算（Desmos等で中黒を表現する \cdot コマンド。JSの文字列内でエスケープするためバックスラッシュは2本）
       break;
     case "DIV":
       code = `\\frac{${a}}{${b}}`; // 除算（分数表現を構築する \frac{分子}{分母} コマンド）
@@ -98,7 +103,7 @@ window.latexGenerator.forBlock["power"] = function (block) {
       window.latexGenerator.ORDER_NONE,
     ) || 0;
   // LaTeXの累乗形式「底^{指数}」を組み立て。指数が複数文字になっても正しく上付き配置されるよう中括弧で囲む
-  return [`${a}^{${b}}`, window.latexGenerator.ORDER_ATOMIC];
+  return [`(${a})^{${b}}`, window.latexGenerator.ORDER_ATOMIC];
 };
 
 // --- 平方根、絶対値、逆数ブロック ---
@@ -141,8 +146,6 @@ window.latexGenerator.forBlock["trigonometry"] = function (block) {
   const op = block.getFieldValue("OP");
   // LaTeXコマンドはすべて小文字（\sin等）であるため、toLowerCase関数で小文字の文字列へと変換
   const func = op.toLowerCase();
-
-  console.log(`${func}の引数:`, a);
 
   // 内部の数式サイズ（分数など）に応じて丸括弧のサイズが自動最適化されるよう \left( と \right) を付与してラップ
   return [`\\${func}\\left(${a}\\right)`, window.latexGenerator.ORDER_ATOMIC];
@@ -188,7 +191,7 @@ window.latexGenerator.forBlock["Relation"] = function (block) {
   }
   // このブロックは他のブロックのパーツにならず、単体で「数式（式そのもの）」となるため、
   // 優先順位の配列ではなく、生成された完成文字列（単体）をそのまま出力する
-  return `${a} ${symbol} ${b}`;
+  return `(${a}) ${symbol} (${b})`;
 };
 
 // --- X,Y変数ブロック ---
@@ -337,10 +340,6 @@ window.latexGenerator.forBlock["Relation_Range"] = function (block) {
       window.latexGenerator.ORDER_NONE,
     ) || "";
 
-  // Desmos APIが「定義域（描画範囲制限）」として正常に解釈するための重要な構文ルールを適用：
-  // API経由の通信では、波括弧にバックスラッシュ（\\）を付けてエスケープするとパースエラーを起こしてグラフが消える仕様のため、
-  // 必ずエスケープなしの「生の波括弧 { }」を用いて、数式の直後に条件を直結させる。
-  // 定義域ブロック（range）が接続されている場合のみ中括弧のコードを結合し、未接続なら通常の数式をそのまま返す。
   const domain = range
     ? `${a} ${symbol} ${b} \\{ ${range} \\}`
     : `${a} ${symbol} ${b}`;
@@ -385,4 +384,23 @@ window.latexGenerator.forBlock["range"] = function (block) {
 
   // このブロックは「setOutput」を持つパーツ用ブロックであるため、必ず「[文字列, 優先順位]」の配列形式で値を返す
   return [`${a} ${symbol} ${b}`, window.latexGenerator.ORDER_ATOMIC];
+};
+
+// ==========================================
+// Blocklyの自動カッコ付与を無効化
+// ==========================================
+window.latexGenerator.valueToCode = function (block, inputName, outerOrder) {
+  const targetBlock = block.getInputTargetBlock(inputName);
+
+  if (!targetBlock) {
+    return "";
+  }
+
+  const code = this.blockToCode(targetBlock);
+
+  if (Array.isArray(code)) {
+    return code[0];
+  }
+
+  return code;
 };
