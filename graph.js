@@ -1,5 +1,5 @@
 // ==========================================
-// 1. グラフ描画・同期更新処理（Blockly から Desmos API への橋渡し
+// 1. グラフ描画・同期更新処理（Blockly から Desmos API への橋渡し）
 // ==========================================
 window.initGraphUpdater = (targetWorkspace) => {
   if (!targetWorkspace) return;
@@ -34,44 +34,44 @@ window.initGraphUpdater = (targetWorkspace) => {
         return;
       }
 
-      // ==========================================
-      // 2. カッコの自動クレンジング・整形処理
-      // ==========================================
-      if (formula) {
-        formula = formula.trim();
+      // // ==========================================
+      // // 2. カッコの自動クレンジング・整形処理
+      // // ==========================================
+      // if (formula) {
+      //   formula = formula.trim();
 
-        const maxLoops = 10;
-        let previousFormula;
-        let loopCount = 0;
+      //   const maxLoops = 10;
+      //   let previousFormula;
+      //   let loopCount = 0;
 
-        do {
-          previousFormula = formula;
+      //   do {
+      //     previousFormula = formula;
 
-          formula = formula.replace(
-            /(?<!\\left)\(([^()]+)\)(?!\\right)/g,
-            "$1",
-          );
+      //     formula = formula.replace(
+      //       /(?<!\\left)\(([^()]+)\)(?!\\right)/g,
+      //       "$1",
+      //     );
 
-          if (formula.startsWith("(") && formula.endsWith(")")) {
-            formula = formula.substring(1, formula.length - 1).trim();
-          }
+      //     if (formula.startsWith("(") && formula.endsWith(")")) {
+      //       formula = formula.substring(1, formula.length - 1).trim();
+      //     }
 
-          loopCount++;
-        } while (formula !== previousFormula && loopCount < maxLoops);
+      //     loopCount++;
+      //   } while (formula !== previousFormula && loopCount < maxLoops);
 
-        // ① 定義域内部の丸カッコ除去
-        formula = formula.replace(/\{[^}]+\}/g, (match) =>
-          match.replace(/[()]/g, ""),
-        );
+      //   // ① 定義域内部の丸カッコ除去
+      //   formula = formula.replace(/\{[^}]+\}/g, (match) =>
+      //     match.replace(/[()]/g, ""),
+      //   );
 
-        // ② 定義域直前の丸カッコ除去
-        formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
+      //   // ② 定義域直前の丸カッコ除去
+      //   formula = formula.replace(/\(([^()]+)\)\s*\{/g, "$1{");
 
-        // ③ 定義域ごと包まれた丸カッコ除去
-        if (formula.startsWith("(") && formula.endsWith("}")) {
-          formula = formula.substring(1).trim();
-        }
-      }
+      //   // ③ 定義域ごと包まれた丸カッコ除去
+      //   if (formula.startsWith("(") && formula.endsWith("}")) {
+      //     formula = formula.substring(1).trim();
+      //   }
+      // }
 
       // ==========================================
       // 3. Desmos への送信・上書き登録
